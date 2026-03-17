@@ -1,6 +1,6 @@
 [submodule "api"]
 	path = api
-	url = ./api
+	url = https://github.com/Anothays/SupDeVinci_hackathon-26.git
 [submodule "web"]
 	path = web
-	url = ./web
+	url = https://github.com/Anothays/SupDeVinci_hackathon-26_web.git
