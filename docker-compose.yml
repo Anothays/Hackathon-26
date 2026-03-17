@@ -1,0 +1,75 @@
+services:
+
+  # ── Base de données PostgreSQL ──────────────────────────────────────────────
+  db:
+    image: postgres:18-alpine
+    container_name: hackathon_db
+    environment:
+      POSTGRES_DB: hackathon_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./api/SQL/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hackathon_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sdv
+
+  # ── Backend Spring Boot ──────────────────────────────────────────────────────
+  api:
+    build: ./api
+    container_name: hackathon_api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hackathon_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      APP_JWT_SECRET: hackathon2026secretkey256bitslong!!
+      APP_JWT_EXPIRATION: 86400000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sdv
+
+  # ── Frontend Angular (nginx) ─────────────────────────────────────────────────
+  web:
+    build: ./web
+    container_name: hackathon_web
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
+    networks:
+      - sdv
+
+  # ── pgAdmin ──────────────────────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: hackathon26@sdv.com
+      PGADMIN_DEFAULT_PASSWORD: hackathon26
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sdv
+
+volumes:
+  pgdata:
+
+networks:
+  sdv:
+    driver: bridge
